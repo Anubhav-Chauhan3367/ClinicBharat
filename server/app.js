@@ -1,5 +1,6 @@
 //imports
 const express = require("express");
+const http = require("http");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
@@ -10,9 +11,15 @@ const doctorRoutes = require("./routes/doctor");
 const patientRoutes = require("./routes/patient");
 const commonRoutes = require("./routes/common");
 
+//import sockets
+const initializeSockets = require("./sockets");
+
 //app setup
 dotenv.config();
 const app = express();
+const server = http.createServer(app);
+
+initializeSockets(server); // Pass the server to initializeSockets
 
 // Access the environment variable
 const mongodbConnectionString = process.env.MONGODB_CONNECTION_STRING;
@@ -45,7 +52,7 @@ mongoose
 		useUnifiedTopology: true,
 	})
 	.then((result) => {
-		app.listen(3001);
+		server.listen(3001);
 	})
 	.catch((err) => {
 		console.log(err);

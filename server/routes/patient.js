@@ -42,26 +42,7 @@ router.post(
 		body("phone").isMobilePhone("any").withMessage("Invalid phone number"),
 	],
 	validate, // Use the validate middleware to check for validation errors
-	async (req, res) => {
-		try {
-			const { username, email, phone, password, medical_history } =
-				req.body;
-
-			// Implement registration logic for doctors using the controller
-			await doctorController.registerDoctor({
-				username,
-				email,
-				phone,
-				password,
-				medical_history,
-			});
-
-			// Respond with a success message
-			res.json({ message: "Patient registration successful" });
-		} catch (error) {
-			res.status(500).json({ error: "Patient registration failed" });
-		}
-	}
+	patientController.registerPatient // Call the registerPatient controller function
 );
 
 // Route for doctor login
@@ -77,25 +58,53 @@ router.post(
 			.withMessage("Password must be at least 8 characters"),
 	],
 	validate, // Use the validate middleware to check for validation errors
+	patientController.loginPatient // Call the loginPatient controller function
+);
+router.post(
+	"/verify-email",
+	[
+		body("otp")
+			.isNumeric()
+			.isLength({ min: 6, max: 6 })
+			.withMessage("Invalid OTP"),
+	],
+	validate, // Use the validate middleware to check for validation errors
 	async (req, res) => {
 		try {
-			const { email, password } = req.body;
-
-			// Implement login logic for patients using the controller
-			const token = await patientController.loginPatient(email, password);
-
-			// Respond with the JWT token
-			res.json({ token });
+			// Implement login logic for doctors using the controller
+			await patientController.verifyEmail(req, res);
 		} catch (error) {
+			console.log(error);
+			res.status(401).json({ error: "Patient authentication failed" });
+		}
+	}
+);
+
+router.post(
+	"/verify-phone",
+	[
+		body("otp")
+			.isNumeric()
+			.isLength({ min: 6, max: 6 })
+			.withMessage("Invalid OTP"),
+	],
+	validate, // Use the validate middleware to check for validation errors
+	async (req, res) => {
+		try {
+			// Implement login logic for doctors using the controller
+			await patientController.verifyPhone(req, res);
+		} catch (error) {
+			console.log(error);
 			res.status(401).json({ error: "Patient authentication failed" });
 		}
 	}
 );
 
 // Route for patient logout (optional)
-router.post("/logout", (req, res) => {
-	// Implement logout logic if needed (e.g., clear the session or token)
-	res.json({ message: "Patient logout route" });
-});
+router.post(
+	"/logout",
+	authMiddleware.authenticationMiddleware("patient"),
+	patientController.logoutPatient
+);
 
 module.exports = router;

@@ -1,30 +1,31 @@
 import React, { useState } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 function PatientRegistration() {
-	const [name, setName] = useState("");
+	const [username, setUsername] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const { login } = useAuth();
+	const [phone, setPhone] = useState("");
+	const navigate = useNavigate();
 
 	const handleRegistration = async (e) => {
 		e.preventDefault();
 
 		try {
 			const response = await fetch(
-				"http://localhost:3000/patient/register",
+				"http://localhost:3001/patient/register",
 				{
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({ name, email, password }),
+					body: JSON.stringify({ username, email, password, phone }),
 				}
 			);
 
 			if (response.ok) {
 				// Successful registration, update the authentication state
-				login();
+				navigate("/login");
 			} else {
 				// Handle registration errors, e.g., show an error message
 				console.error("Registration failed");
@@ -50,8 +51,8 @@ function PatientRegistration() {
 						type="text"
 						id="name"
 						name="name"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
+						value={username}
+						onChange={(e) => setUsername(e.target.value)}
 						className="mt-1 p-2 w-full border rounded-md"
 						required
 					/>
@@ -86,6 +87,23 @@ function PatientRegistration() {
 						name="password"
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
+						className="mt-1 p-2 w-full border rounded-md"
+						required
+					/>
+				</div>
+				<div className="mb-4">
+					<label
+						htmlFor="phone"
+						className="block text-sm font-medium text-gray-600"
+					>
+						Phone
+					</label>
+					<input
+						type="number"
+						id="phone"
+						name="phone"
+						value={phone}
+						onChange={(e) => setPhone(e.target.value)}
 						className="mt-1 p-2 w-full border rounded-md"
 						required
 					/>

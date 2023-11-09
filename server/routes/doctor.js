@@ -46,17 +46,7 @@ router.post(
 		body("phone").isMobilePhone("any").withMessage("Invalid phone number"),
 	],
 	validate, // Use the validate middleware to check for validation errors
-	async (req, res) => {
-		try {
-			// Implement registration logic for doctors using the controller
-			await doctorController.registerDoctor(req, res);
-
-			// Respond with a success message
-			res.json({ message: "Doctor registration successful" });
-		} catch (error) {
-			res.status(500).json({ error: "Doctor registration failed" });
-		}
-	}
+	doctorController.registerDoctor // Call the registerDoctor controller function
 );
 
 // Route for doctor login
@@ -72,10 +62,42 @@ router.post(
 			.withMessage("Password must be at least 8 characters"),
 	],
 	validate, // Use the validate middleware to check for validation errors
+	doctorController.loginDoctor // Call the loginDoctor controller function
+);
+
+router.post(
+	"/verify-email",
+	[
+		body("otp")
+			.isNumeric()
+			.isLength({ min: 6, max: 6 })
+			.withMessage("Invalid OTP"),
+	],
+	validate, // Use the validate middleware to check for validation errors
 	async (req, res) => {
 		try {
 			// Implement login logic for doctors using the controller
-			await doctorController.loginDoctor(req, res);
+			await doctorController.verifyEmail(req, res);
+		} catch (error) {
+			console.log(error);
+			res.status(401).json({ error: "Doctor authentication failed" });
+		}
+	}
+);
+
+router.post(
+	"/verify-phone",
+	[
+		body("otp")
+			.isNumeric()
+			.isLength({ min: 6, max: 6 })
+			.withMessage("Invalid OTP"),
+	],
+	validate, // Use the validate middleware to check for validation errors
+	async (req, res) => {
+		try {
+			// Implement login logic for doctors using the controller
+			await doctorController.verifyPhone(req, res);
 		} catch (error) {
 			console.log(error);
 			res.status(401).json({ error: "Doctor authentication failed" });
@@ -84,9 +106,10 @@ router.post(
 );
 
 // Route for doctor logout (optional)
-router.post("/logout", (req, res) => {
-	// Implement logout logic if needed (e.g., clear the session or token)
-	res.json({ message: "Doctor logout route" });
-});
+router.post(
+	"/logout",
+	authMiddleware.authenticationMiddleware("doctor"),
+	doctorController.logoutDoctor
+);
 
 module.exports = router;

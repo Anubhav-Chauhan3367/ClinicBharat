@@ -1,5 +1,5 @@
 // AuthContext.js
-import React, { createContext, useContext, useReducer } from "react";
+import React, { createContext, useContext, useReducer, useEffect } from "react";
 
 const AuthContext = createContext();
 
@@ -30,8 +30,33 @@ const authReducer = (state, action) => {
 const AuthProvider = ({ children }) => {
 	const [authState, dispatch] = useReducer(authReducer, initialState);
 
+	// Get the authentication state from local storage on component mount
+	useEffect(() => {
+		const storedAuthState = JSON.parse(localStorage.getItem("authState"));
+		if (storedAuthState) {
+			dispatch({ type: "LOGIN", payload: storedAuthState.user });
+		}
+	}, []);
+
+	const login = (user) => {
+		dispatch({ type: "LOGIN", payload: user });
+
+		// Save the authentication state to local storage
+		localStorage.setItem(
+			"authState",
+			JSON.stringify({ isAuthenticated: true, user })
+		);
+	};
+
+	const logout = () => {
+		dispatch({ type: "LOGOUT" });
+
+		// Remove the authentication state from local storage
+		localStorage.removeItem("authState");
+	};
+
 	return (
-		<AuthContext.Provider value={{ authState, dispatch }}>
+		<AuthContext.Provider value={{ authState, login, logout }}>
 			{children}
 		</AuthContext.Provider>
 	);

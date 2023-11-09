@@ -31,6 +31,15 @@ const patientSchema = new mongoose.Schema({
 		required: true,
 		minlength: 6,
 	},
+	address: {
+		type: String,
+	},
+	age: {
+		type: Number,
+	},
+	gender: {
+		type: String,
+	},
 	medical_history: {
 		type: String,
 	},

@@ -5,8 +5,8 @@ function createTransporter() {
 	const transporter = nodemailer.createTransport({
 		service: "Gmail", // Your email service provider
 		auth: {
-			user: "your-email@gmail.com",
-			pass: "your-email-password",
+			user: "anubhavchauhan3011@gmail,com", // Your email address
+			pass: "Kittudidi@55555",
 		},
 	});
 
@@ -16,7 +16,7 @@ function createTransporter() {
 // Function to send an email
 function sendEmail(transporter, recipient, subject, text) {
 	const mailOptions = {
-		from: "your-email@gmail.com",
+		from: "anubhavchauhan3011@gmail.com",
 		to: recipient,
 		subject: subject,
 		text: text,

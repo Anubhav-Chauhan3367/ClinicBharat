@@ -6,6 +6,7 @@ import Footer from "./components/common/Footer";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Verification from "./pages/Verification";
 
 function AppRouter() {
 	return (
@@ -15,6 +16,7 @@ function AppRouter() {
 				<Route path="/" element={<Dashboard />} />
 				<Route path="/login" element={<Login />} />
 				<Route path="/register" element={<Register />} />
+				<Route path="/verify" element={<Verification />} />
 			</Routes>
 			<Footer />
 		</Router>

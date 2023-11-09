@@ -1,17 +1,19 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 function PatientLogin() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const { login } = useAuth();
+	const navigate = useNavigate();
 
 	const handleLogin = async (e) => {
 		e.preventDefault();
 
 		try {
 			const response = await fetch(
-				"http://localhost:3000/patient/login",
+				"http://localhost:3001/patient/login",
 				{
 					method: "POST",
 					headers: {
@@ -23,7 +25,10 @@ function PatientLogin() {
 
 			if (response.ok) {
 				// Successful login, update the authentication state
-				login();
+				const data = await response.json();
+				data.user.role = "patient";
+				login(data.user);
+				navigate("/");
 			} else {
 				// Handle login errors, e.g., show an error message
 				console.error("Login failed");

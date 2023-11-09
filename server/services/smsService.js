@@ -9,7 +9,7 @@ const client = twilio(accountSid, authToken);
 function sendSMS(to, message) {
 	return client.messages.create({
 		body: message,
-		from: "your_twilio_phone_number", // Your Twilio phone number
+		from: "", // Your Twilio phone number
 		to: to, // Recipient's phone number
 	});
 }

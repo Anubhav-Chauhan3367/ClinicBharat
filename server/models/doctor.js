@@ -33,6 +33,16 @@ const doctorSchema = new mongoose.Schema({
 	medical_license: {
 		type: String,
 	},
+	address: {
+		street: String,
+		city: String,
+		state: String,
+		postal_code: String,
+		country: String,
+	},
+	qualification: {
+		type: String,
+	},
 	specialty: {
 		type: String,
 	},
