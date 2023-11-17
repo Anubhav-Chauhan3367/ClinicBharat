@@ -25,13 +25,13 @@ function Navbar() {
 						<>
 							<Link
 								to="/login"
-								className="text-white font-medium hover:underline"
+								className="text-blue-800 font-medium hover:border-4 p-3 border-blue-800 focus:bg-blue-500 focus:text-white focus:border-2"
 							>
 								Login
 							</Link>
 							<Link
 								to="/register"
-								className="text-white font-medium hover:underline"
+								className="text-blue-800 font-medium hover:border-4 p-3 border-blue-800 focus:bg-blue-500 focus:text-white focus:border-2"
 							>
 								Register
 							</Link>

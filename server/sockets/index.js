@@ -1,12 +1,21 @@
 // sockets/index.js
+let io;
 
-const appointmentsSocket = require("./appointmentsSocket");
+module.exports = {
+	init: (server) => {
+		io = require("socket.io")(server);
 
-const initializeSockets = (server) => {
-	const io = require("socket.io")(server);
+		io.on("error", (error) => {
+			console.error("Socket.IO Error:", error);
+		});
 
-	// Initialize other socket namespaces or modules here if needed
-	appointmentsSocket(io);
+		return io;
+	},
+	getIO: () => {
+		if (!io) {
+			throw new Error("Socket.IO not initialized");
+		}
+
+		return io;
+	},
 };
-
-module.exports = initializeSockets;

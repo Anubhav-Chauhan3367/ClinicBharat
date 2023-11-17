@@ -7,23 +7,19 @@ const authMiddleware = require("../middlewares/authMiddleware");
 const { validate } = require("../middlewares/validationMiddleware");
 
 // Route for the doctor's dashboard, responding with JSON data
-router.get(
-	"/dashboard",
-	authMiddleware.authenticationMiddleware("patient"),
-	async (req, res) => {
-		try {
-			const patient = req.user; // Assuming you have middleware to set the authenticated patient in req.user
+router.get("/dashboard", authMiddleware("patient"), async (req, res) => {
+	try {
+		const patient = req.user; // Assuming you have middleware to set the authenticated patient in req.user
 
-			// Replace this with logic to retrieve actual doctor dashboard data
-			const dashboardData = dashboardController.getListOfDoctors();
-			res.json({ dashboardData });
-		} catch (error) {
-			res.status(500).json({
-				error: "Error retrieving doctor dashboard data",
-			});
-		}
+		// Replace this with logic to retrieve actual doctor dashboard data
+		const dashboardData = dashboardController.getListOfDoctors();
+		res.json({ dashboardData });
+	} catch (error) {
+		res.status(500).json({
+			error: "Error retrieving doctor dashboard data",
+		});
 	}
-);
+});
 
 // Route for patient registration with validation middleware
 router.post(
@@ -103,7 +99,7 @@ router.post(
 // Route for patient logout (optional)
 router.post(
 	"/logout",
-	authMiddleware.authenticationMiddleware("patient"),
+	authMiddleware("patient"),
 	patientController.logoutPatient
 );
 

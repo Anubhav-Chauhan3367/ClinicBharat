@@ -1,53 +1,81 @@
 const express = require("express");
 const router = express.Router();
 
+const { body } = require("express-validator");
+
 const authMiddleware = require("../middlewares/authMiddleware");
-const validateAppointmentData = require("../middlewares/validateAppointmentData");
-const validationMiddleware = require("../middlewares/validationMiddleware");
+const { validate } = require("../middlewares/validationMiddleware");
 
-const appointmentsController = require("../controllers/appointmentsController");
-
-// Middleware for date validation
-const isValidDate = (value) => {
-	const date = new Date(value);
-	return !isNaN(date.getTime());
-};
+const appointmentsController = require("../controllers/appointment");
 
 // Get appointments for the current day for a doctor
 router.get(
 	"/doctor",
-	authMiddleware,
+	authMiddleware("doctor"),
 	appointmentsController.getDoctorAppointments
 );
 
 // Get appointments for the current day for a patient
 router.get(
 	"/patient",
-	authMiddleware,
+	authMiddleware("Patient"),
 	appointmentsController.getPatientAppointments
 );
 
 // Create a new appointment
 router.post(
 	"/",
-	authMiddleware,
-	validateAppointmentData,
-	validationMiddleware,
+	authMiddleware("Patient"),
+	[
+		body("patient").isMongoId().withMessage("Invalid patient ID"),
+		body("doctor").isMongoId().withMessage("Invalid doctor ID"),
+		body("booking_time")
+			.isISO8601()
+			.toDate()
+			.withMessage("Invalid booking time"),
+		body("appointment_date")
+			.isISO8601()
+			.toDate()
+			.withMessage("Invalid appointment date"),
+		body("status")
+			.isIn(["scheduled", "late", "completed"])
+			.withMessage("Invalid status"),
+		body("notes")
+			.optional()
+			.isString()
+			.withMessage("Notes should be a string"),
+	],
+	validate,
 	appointmentsController.createAppointment
 );
 
 // Update the status of an appointment
 router.put(
 	"/:appointmentId",
-	authMiddleware,
+	authMiddleware("Patient"),
 	appointmentsController.updateAppointmentStatus
 );
 
 // Cancel an appointment
 router.delete(
 	"/:appointmentId",
-	authMiddleware,
+	authMiddleware("doctor"),
 	appointmentsController.cancelAppointment
+);
+
+// New routes for waiting queue appointments
+// Get waiting queue appointments for the current day for a doctor
+router.get(
+	"/waiting-doctor",
+	authMiddleware("doctor"),
+	appointmentsController.getDoctorWaitingQueueAppointments
+);
+
+// Get waiting queue appointments for the current day for a patient
+router.get(
+	"/waiting-patient",
+	authMiddleware("Patient"),
+	appointmentsController.getPatientWaitingQueueAppointments
 );
 
 module.exports = router;

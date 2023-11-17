@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { VerticalTimeline } from "react-vertical-timeline-component";
 import { motion } from "framer-motion";
-import AppointmentCard from "./AppointmentCard";
+import QueueCard from "./QueueCard";
 import socketIOClient from "socket.io-client";
 import { useAuth } from "../../context/AuthContext";
 
@@ -10,34 +10,16 @@ import "react-vertical-timeline-component/style.min.css";
 import { textVariant } from "../../utils/motion";
 import SectionWrapper from "../../hoc/SectionWrapper";
 
-const Appointments = ({ updateStats }) => {
+const WaitingQueue = () => {
 	const [appointments, setAppointments] = useState([]);
 	const [loading, setLoading] = useState(true); // Added loading state
 	const { authState } = useAuth();
 	const yourAuthToken = authState.user.jwtToken;
 
-	const calculateStats = () => {
-		const currentQueueSize = appointments.length; // Calculate current queue size
-		const waitingQueueSize = 0; // Placeholder value for waiting queue size
-		const avgWaitingTime = "15 mins"; // Placeholder value for average waiting time
-		console.log(
-			"currentQueueSize",
-			currentQueueSize,
-			waitingQueueSize,
-			avgWaitingTime
-		);
-		// Call the updateStats function with calculated stats
-		updateStats({
-			currentQueueSize,
-			waitingQueueSize,
-			avgWaitingTime,
-		});
-	};
-
 	const fetchInitialData = async () => {
 		try {
 			const response = await fetch(
-				"http://localhost:3001/appointments/doctor",
+				"http://localhost:3001/appointments/waiting-doctor",
 				{
 					headers: {
 						Authorization: `Bearer ${yourAuthToken}`,
@@ -51,7 +33,6 @@ const Appointments = ({ updateStats }) => {
 
 			const data = await response.json();
 			setAppointments(data);
-			calculateStats(); // Calculate stats on initial data fetch
 		} catch (error) {
 			console.error("Error fetching initial data:", error);
 		} finally {
@@ -67,33 +48,40 @@ const Appointments = ({ updateStats }) => {
 			transports: ["websocket"],
 		});
 
-		socket.on("appointmentUpdate", (updatedAppointment) => {
-			setAppointments((prevAppointments) =>
-				prevAppointments.map((appointment) =>
-					appointment._id === updatedAppointment._id
-						? updatedAppointment
-						: appointment
-				)
-			);
-			calculateStats(); // Recalculate stats on appointment update
+		socket.on("appointmentUpdate", ({ updatedAppointment, queueType }) => {
+			if (queueType === "waiting") {
+				setAppointments((prevAppointments) =>
+					prevAppointments.map((appointment) =>
+						appointment._id === updatedAppointment._id
+							? updatedAppointment
+							: appointment
+					)
+				);
+			}
 		});
 
-		socket.on("newAppointment", (newAppointment) => {
+		socket.on("newAppointment", ({ newAppointment, queueType }) => {
 			// console.log("newAppointment", newAppointment);
-			setAppointments((prevAppointments) => {
-				return [...prevAppointments, newAppointment];
-			});
-			calculateStats(); // Recalculate stats on new appointment
+			if (queueType === "waiting") {
+				setAppointments((prevAppointments) => {
+					return [...prevAppointments, newAppointment];
+				});
+			}
 		});
 
-		socket.on("appointmentCancelled", (cancelledAppointmentId) => {
-			setAppointments((prevAppointments) =>
-				prevAppointments.filter(
-					(appointment) => appointment._id !== cancelledAppointmentId
-				)
-			);
-			calculateStats(); // Recalculate stats on appointment cancellation
-		});
+		socket.on(
+			"appointmentCancelled",
+			({ cancelledAppointmentId, queueType }) => {
+				if (queueType === "waiting") {
+					setAppointments((prevAppointments) =>
+						prevAppointments.filter(
+							(appointment) =>
+								appointment._id !== cancelledAppointmentId
+						)
+					);
+				}
+			}
+		);
 
 		socket.on("connect_error", (error) => {
 			console.error("Socket connection error:", error);
@@ -128,18 +116,25 @@ const Appointments = ({ updateStats }) => {
 				</h3>
 			</motion.div>
 
-			<div className="mt-20 flex bg-purple-300 flex-col">
-				<VerticalTimeline>
-					{appointments.map((appointment) => (
-						<AppointmentCard
-							key={appointment._id}
-							appointment={appointment}
-						/>
-					))}
-				</VerticalTimeline>
+			<div className="mt-20 flex rounded-md bg-purple-300 flex-col">
+				{appointments.length === 0 ? (
+					<div className="p-20 font-bold text-xl">
+						No appointments are booked yet.
+					</div>
+				) : (
+					<VerticalTimeline>
+						{appointments.map((appointment) => (
+							<QueueCard
+								key={Math.random()}
+								// appointment.patient._id
+								appointment={appointment}
+							/>
+						))}
+					</VerticalTimeline>
+				)}
 			</div>
 		</>
 	);
 };
 
-export default SectionWrapper(Appointments, "appointments");
+export default SectionWrapper(WaitingQueue, "waitingQueue");

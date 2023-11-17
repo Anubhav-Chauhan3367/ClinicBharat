@@ -6,8 +6,8 @@ const jwt = require("jsonwebtoken");
 // Function for doctor registration
 const registerDoctor = async (req, res) => {
 	try {
-		console.log("inside registerDoctor");
-		console.log(req.body);
+		// console.log("inside registerDoctor");
+		// console.log(req.body);
 		const { username, email, phone, password, medical_license, specialty } =
 			req.body;
 
@@ -127,10 +127,32 @@ const logoutDoctor = async (req, res) => {
 	}
 };
 
+const updateDoctorSettings = async (req, res) => {
+	try {
+		const doctor = req.user; // Assuming you have middleware to set the authenticated doctor in req.user
+
+		const { mainQueueLimit, waitingQueueLimit, averageTimePerPatient } =
+			req.body;
+
+		// Call the updateQueueAndTimeSettings method on the doctor instance
+		await doctor.updateQueueAndTimeSettings(
+			mainQueueLimit,
+			waitingQueueLimit,
+			averageTimePerPatient
+		);
+
+		res.json({ message: "Doctor settings updated successfully" });
+	} catch (error) {
+		console.error("Update failed:", error);
+		res.status(500).json({ error: "Update failed" });
+	}
+};
+
 module.exports = {
 	registerDoctor,
 	verifyEmail,
 	verifyPhone,
 	loginDoctor,
 	logoutDoctor,
+	updateDoctorSettings, // Add the new controller function
 };

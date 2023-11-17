@@ -1,8 +1,11 @@
 import React from "react";
 import { VerticalTimelineElement } from "react-vertical-timeline-component";
+import { useAuth } from "../../context/AuthContext";
 
-const AppointmentCard = ({ appointment }) => {
+const QueueCard = ({ appointment }) => {
 	const appointmentDate = new Date(appointment.appointment_date);
+	const { authState } = useAuth();
+	const yourAuthToken = authState.user.jwtToken;
 
 	const formattedDate = appointmentDate.toLocaleDateString("en-US", {
 		weekday: "long",
@@ -16,14 +19,33 @@ const AppointmentCard = ({ appointment }) => {
 		minute: "numeric",
 	});
 
-	const handleAction = (action) => {
+	const handleAction = async (action) => {
 		// Perform the action based on the button clicked
 		switch (action) {
 			case "late":
 				// Code to handle marking as late
 				break;
 			case "cancel":
-				// Code to handle cancelling the appointment
+				// Send a request to cancel the appointment
+				const response = await fetch(
+					`localhost:3001/appointments/${appointment._id}`,
+					{
+						method: "DELETE",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: `Bearer ${yourAuthToken}`,
+						},
+					}
+				);
+
+				if (response.ok) {
+					// Handle successful cancellation
+					appointment.status = "cancelled";
+					console.log("Appointment cancelled successfully");
+				} else {
+					// Handle error in cancellation
+					console.error("Failed to cancel appointment");
+				}
 				break;
 			case "completed":
 				// Code to handle marking as completed
@@ -36,7 +58,8 @@ const AppointmentCard = ({ appointment }) => {
 	return (
 		<VerticalTimelineElement
 			contentStyle={{
-				background: "#1d1836",
+				background:
+					appointment.status === "cancelled" ? "#FFD699" : "#1d1836",
 				color: "#fff",
 			}}
 			contentArrowStyle={{ borderRight: "7px solid  #232631" }}
@@ -80,4 +103,4 @@ const AppointmentCard = ({ appointment }) => {
 	);
 };
 
-export default AppointmentCard;
+export default QueueCard;

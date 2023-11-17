@@ -7,27 +7,20 @@ const authMiddleware = require("../middlewares/authMiddleware");
 const { validate } = require("../middlewares/validationMiddleware");
 
 // Route for the doctor's dashboard, responding with JSON data
-router.get(
-	"/dashboard",
-	authMiddleware.authenticationMiddleware("doctor"),
-	async (req, res) => {
-		try {
-			const doctor = req.user; // Assuming you have middleware to set the authenticated doctor in req.user
+router.get("/dashboard", authMiddleware("doctor"), async (req, res) => {
+	try {
+		const doctor = req.user; // Assuming you have middleware to set the authenticated doctor in req.user
 
-			// Replace this with logic to retrieve actual doctor dashboard data
-			const dashboardData = dashboardController.getListOfPatients(
-				req,
-				res
-			);
+		// Replace this with logic to retrieve actual doctor dashboard data
+		const dashboardData = dashboardController.getListOfPatients(req, res);
 
-			res.json({ dashboardData });
-		} catch (error) {
-			res.status(500).json({
-				error: "Error retrieving doctor dashboard data",
-			});
-		}
+		res.json({ dashboardData });
+	} catch (error) {
+		res.status(500).json({
+			error: "Error retrieving doctor dashboard data",
+		});
 	}
-);
+});
 
 // Route for doctor registration with validation middleware
 router.post(
@@ -105,11 +98,25 @@ router.post(
 	}
 );
 
-// Route for doctor logout (optional)
 router.post(
-	"/logout",
-	authMiddleware.authenticationMiddleware("doctor"),
-	doctorController.logoutDoctor
+	"/set-target",
+	authMiddleware("doctor"), // Assuming you have middleware to authenticate the doctor
+	[
+		body("mainQueueLimit")
+			.isNumeric()
+			.withMessage("Invalid main queue limit"),
+		body("waitingQueueLimit")
+			.isNumeric()
+			.withMessage("Invalid waiting queue limit"),
+		body("averageTimePerPatient")
+			.isNumeric()
+			.withMessage("Invalid average time per patient"),
+	],
+	validate, // Use the validate middleware to check for validation errors
+	doctorController.updateDoctorSettings // Call the updateDoctorSettings controller function
 );
+
+// Route for doctor logout (optional)
+router.post("/logout", authMiddleware("doctor"), doctorController.logoutDoctor);
 
 module.exports = router;

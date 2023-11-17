@@ -1,28 +1,28 @@
 //imports
 const express = require("express");
-const http = require("http");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 
+//app setup
+dotenv.config();
+const app = express();
+
+//socket setup
+const http = require("http");
+const server = http.createServer(app);
+const io = require("./sockets/index").init(server);
+// console.log(io, "io");
+
+// Access the environment variable
+const mongodbConnectionString = process.env.MONGODB_CONNECTION_STRING;
+
 //import routes
 const doctorRoutes = require("./routes/doctor");
 const patientRoutes = require("./routes/patient");
 const commonRoutes = require("./routes/common");
-
-//import sockets
-const initializeSockets = require("./sockets");
-
-//app setup
-dotenv.config();
-const app = express();
-const server = http.createServer(app);
-
-initializeSockets(server); // Pass the server to initializeSockets
-
-// Access the environment variable
-const mongodbConnectionString = process.env.MONGODB_CONNECTION_STRING;
+const appointmentRoutes = require("./routes/appointment");
 
 //middlewares
 app.use(cors());
@@ -32,6 +32,7 @@ app.use(bodyParser.json());
 app.use("/", commonRoutes);
 app.use("/doctor", doctorRoutes);
 app.use("/patient", patientRoutes);
+app.use("/appointments", appointmentRoutes);
 
 //error handling
 app.use((err, req, res, next) => {
@@ -52,7 +53,9 @@ mongoose
 		useUnifiedTopology: true,
 	})
 	.then((result) => {
-		server.listen(3001);
+		server.listen(3001, () => {
+			console.log("listening on port 3001");
+		});
 	})
 	.catch((err) => {
 		console.log(err);

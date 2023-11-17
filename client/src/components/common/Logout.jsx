@@ -5,7 +5,7 @@ function Logout() {
 	console.log("Logout");
 	const { authState, logout } = useAuth();
 
-	console.log(authState.user.jwtToken + " " + authState.user.role);
+	// console.log(authState.user.jwtToken + " " + authState.user.role);
 	const handleLogout = async () => {
 		console.log("handleLogout");
 		// Call the logout function from your global authentication context
@@ -26,7 +26,7 @@ function Logout() {
 				if (response.ok) {
 					// After a successful response, call the logout function from your global authentication context
 
-					console.log(response);
+					// console.log(response);
 					logout();
 				} else {
 					// Handle logout failure
@@ -36,7 +36,7 @@ function Logout() {
 				console.error("Logout failed:", error);
 			}
 		} else {
-			console.log("doctor");
+			// console.log("doctor");
 			try {
 				// Make an HTTP request to your backend's /logout route using fetch
 				const response = await fetch(

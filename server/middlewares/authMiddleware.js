@@ -9,7 +9,7 @@ const jwtSecret = process.env.JWT_SECRET;
 // Middleware to verify JWT tokens for both doctor and patient
 const authenticationMiddleware = (userType) => (req, res, next) => {
 	const token = req.headers.authorization.split(" ")[1];
-	console.log(token);
+	// console.log(token);
 
 	if (!token) {
 		return res
@@ -26,7 +26,7 @@ const authenticationMiddleware = (userType) => (req, res, next) => {
 	const decoded = jwt.verify(token, jwtSecret);
 
 	// Attach the authenticated user to the request
-	console.log(decoded);
+	// console.log(decoded);
 	model
 		.findOne({ _id: decoded._id })
 		.then((user) => {
@@ -42,6 +42,4 @@ const authenticationMiddleware = (userType) => (req, res, next) => {
 		});
 };
 
-module.exports = {
-	authenticationMiddleware,
-};
+module.exports = authenticationMiddleware;

@@ -61,6 +61,18 @@ const doctorSchema = new mongoose.Schema({
 		type: String,
 	},
 	jwtToken: String, // Field to store the JWT token
+	mainQueueLimit: {
+		type: Number,
+		default: 20,
+	},
+	waitingQueueLimit: {
+		type: Number,
+		default: 30,
+	},
+	averageTimePerPatient: {
+		type: Number,
+		default: 15, // Set a default time in minutes, change as needed
+	},
 });
 
 // Pre-save hook to hash the password before saving to the database
@@ -199,6 +211,18 @@ doctorSchema.methods.verifyPhoneVerificationOTP = async function (inputOTP) {
 
 	// Mark the phone as verified
 	this.isPhoneVerified = true;
+	await this.save();
+};
+
+// Method to update mainQueueLimit, waitingQueueLimit, and averageTimePerPatient
+doctorSchema.methods.updateQueueAndTimeSettings = async function (
+	mainQueueLimit,
+	waitingQueueLimit,
+	averageTimePerPatient
+) {
+	this.mainQueueLimit = mainQueueLimit;
+	this.waitingQueueLimit = waitingQueueLimit;
+	this.averageTimePerPatient = averageTimePerPatient;
 	await this.save();
 };
 

@@ -1,12 +1,7 @@
 const mongoose = require("mongoose");
 
 const appointmentSchema = new mongoose.Schema({
-	appointment_id: {
-		type: Number,
-		unique: true,
-		required: true,
-	},
-	user: {
+	patient: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Patient",
 		required: true,
@@ -24,13 +19,9 @@ const appointmentSchema = new mongoose.Schema({
 		type: Date,
 		required: true,
 	},
-	duration: {
-		type: Number, // Duration in minutes
-		required: true,
-	},
 	status: {
 		type: String,
-		enum: ["scheduled", "late", "cancelled", "completed"],
+		enum: ["scheduled", "late", "completed"],
 		default: "scheduled",
 	},
 	notes: String,
@@ -42,6 +33,12 @@ const appointmentSchema = new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
+	// New field to indicate the queue type (main or waiting)
+	queue: {
+		type: String,
+		enum: ["main", "waiting"],
+		default: "main",
+	},
 });
 
 // Static method to create a new appointment
@@ -50,41 +47,57 @@ appointmentSchema.statics.createAppointment = async function (data) {
 };
 
 // Instance method to cancel an appointment
-appointmentSchema.methods.cancelAppointment = function () {
-	this.status = "cancelled";
+appointmentSchema.methods.cancelAppointment = async function () {
+	await this.remove();
+	return this;
+};
+
+// Instance method to update the status of an appointment
+appointmentSchema.methods.updateStatus = function (newStatus) {
+	this.status = newStatus;
 	return this.save();
 };
 
-// Instance method to mark an appointment as 'late'
-appointmentSchema.methods.markAsLate = function () {
-	this.status = "late";
-	return this.save();
-};
-
-// Static method to retrieve a doctor's upcoming appointments
-appointmentSchema.statics.getUpcomingAppointmentsForDoctor = function (
-	doctorId
+// Static method to retrieve a doctor's appointments for the current date and specific queue type
+appointmentSchema.statics.getAppointmentsForDoctor = function (
+	doctorId,
+	queueType
 ) {
-	return this.find({
+	const currentDate = new Date();
+	currentDate.setHours(0, 0, 0, 0);
+
+	const query = {
 		doctor: doctorId,
-		status: "scheduled",
-		appointment_date: { $gte: new Date() },
-	})
-		.populate("user")
-		.populate("doctor");
+		appointment_date: { $gte: currentDate },
+	};
+
+	if (queueType) {
+		query.queue = queueType;
+	}
+
+	const res = this.find(query).populate("patient").populate("doctor");
+
+	return res;
 };
 
-// Static method to retrieve a patient's upcoming appointments
-appointmentSchema.statics.getUpcomingAppointmentsForPatient = function (
-	patientId
+// Static method to retrieve a patient's appointments for the current date and specific queue type
+appointmentSchema.statics.getAppointmentsForPatient = function (
+	patientId,
+	queueType
 ) {
-	return this.find({
-		user: patientId,
-		status: "scheduled",
-		appointment_date: { $gte: new Date() },
-	})
-		.populate("user")
-		.populate("doctor");
+	const currentDate = new Date();
+	currentDate.setHours(0, 0, 0, 0);
+
+	const query = {
+		patient: patientId,
+		appointment_date: { $gte: currentDate },
+	};
+
+	if (queueType) {
+		query.queue = queueType;
+	}
+
+	return this.find(query).populate("patient").populate("doctor");
 };
 
 const Appointment = mongoose.model("Appointment", appointmentSchema);

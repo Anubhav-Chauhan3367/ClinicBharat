@@ -2,10 +2,11 @@ import React from "react";
 import { useAuth } from "../context/AuthContext";
 import DoctorDashboard from "../components/dashboard/DoctorDashboard";
 import PatientDashboard from "../components/dashboard/PatientDashboard";
+import Welcome from "../components/common/Welcome";
 
 function Dashboard() {
 	const { authState } = useAuth();
-	console.log(authState);
+	// console.log(authState);
 
 	return (
 		<div className="min-h-screen flex justify-center text-center">
@@ -18,10 +19,7 @@ function Dashboard() {
 					) : null}
 				</div>
 			) : (
-				<p>
-					You are not logged in. Please log in to access the
-					dashboard.
-				</p>
+				<Welcome />
 			)}
 		</div>
 	);
