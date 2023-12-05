@@ -28,7 +28,7 @@ const QueueCard = ({ appointment }) => {
 			case "cancel":
 				// Send a request to cancel the appointment
 				const response = await fetch(
-					`localhost:3001/appointments/${appointment._id}`,
+					`http://localhost:3001/appointments/${appointment._id}`,
 					{
 						method: "DELETE",
 						headers: {
@@ -40,7 +40,7 @@ const QueueCard = ({ appointment }) => {
 
 				if (response.ok) {
 					// Handle successful cancellation
-					appointment.status = "cancelled";
+
 					console.log("Appointment cancelled successfully");
 				} else {
 					// Handle error in cancellation

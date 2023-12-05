@@ -23,6 +23,7 @@ const doctorRoutes = require("./routes/doctor");
 const patientRoutes = require("./routes/patient");
 const commonRoutes = require("./routes/common");
 const appointmentRoutes = require("./routes/appointment");
+const queueRoutes = require("./routes/queue");
 
 //middlewares
 app.use(cors());
@@ -33,6 +34,7 @@ app.use("/", commonRoutes);
 app.use("/doctor", doctorRoutes);
 app.use("/patient", patientRoutes);
 app.use("/appointments", appointmentRoutes);
+app.use("/queue", queueRoutes);
 
 //error handling
 app.use((err, req, res, next) => {

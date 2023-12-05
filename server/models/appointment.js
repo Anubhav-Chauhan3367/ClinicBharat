@@ -33,11 +33,9 @@ const appointmentSchema = new mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
-	// New field to indicate the queue type (main or waiting)
 	queue: {
-		type: String,
-		enum: ["main", "waiting"],
-		default: "main",
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Queue",
 	},
 });
 
@@ -48,7 +46,7 @@ appointmentSchema.statics.createAppointment = async function (data) {
 
 // Instance method to cancel an appointment
 appointmentSchema.methods.cancelAppointment = async function () {
-	await this.remove();
+	await this.deleteOne();
 	return this;
 };
 
@@ -58,11 +56,14 @@ appointmentSchema.methods.updateStatus = function (newStatus) {
 	return this.save();
 };
 
-// Static method to retrieve a doctor's appointments for the current date and specific queue type
-appointmentSchema.statics.getAppointmentsForDoctor = function (
-	doctorId,
-	queueType
-) {
+// Instance method to update the queue ID of an appointment
+appointmentSchema.methods.updateQueue = function (newQueueId) {
+	this.queue = newQueueId;
+	return this.save();
+};
+
+// Static method to retrieve a doctor's appointments for the current date
+appointmentSchema.statics.getAppointmentsForDoctor = function (doctorId) {
 	const currentDate = new Date();
 	currentDate.setHours(0, 0, 0, 0);
 
@@ -71,20 +72,11 @@ appointmentSchema.statics.getAppointmentsForDoctor = function (
 		appointment_date: { $gte: currentDate },
 	};
 
-	if (queueType) {
-		query.queue = queueType;
-	}
-
-	const res = this.find(query).populate("patient").populate("doctor");
-
-	return res;
+	return this.find(query).populate("patient").populate("doctor");
 };
 
-// Static method to retrieve a patient's appointments for the current date and specific queue type
-appointmentSchema.statics.getAppointmentsForPatient = function (
-	patientId,
-	queueType
-) {
+// Static method to retrieve a patient's appointments for the current date
+appointmentSchema.statics.getAppointmentsForPatient = function (patientId) {
 	const currentDate = new Date();
 	currentDate.setHours(0, 0, 0, 0);
 
@@ -92,10 +84,6 @@ appointmentSchema.statics.getAppointmentsForPatient = function (
 		patient: patientId,
 		appointment_date: { $gte: currentDate },
 	};
-
-	if (queueType) {
-		query.queue = queueType;
-	}
 
 	return this.find(query).populate("patient").populate("doctor");
 };

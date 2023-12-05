@@ -1,6 +1,6 @@
 const Doctor = require("../models/doctor");
-const { createTransporter, sendEmail } = require("../services/emailService");
-const { sendSMS } = require("../services/smsService");
+// const { createTransporter, sendEmail } = require("../services/emailService");
+// const { sendSMS } = require("../services/smsService");
 const jwt = require("jsonwebtoken");
 
 // Function for doctor registration
@@ -148,11 +148,24 @@ const updateDoctorSettings = async (req, res) => {
 	}
 };
 
+const Modifier = require("../models/modifier");
+
+const getAllModifiers = async (req, res) => {
+	try {
+		const modifiers = await Modifier.find();
+		res.json(modifiers);
+	} catch (error) {
+		console.error("Fetching modifiers failed:", error);
+		res.status(500).json({ error: "Fetching modifiers failed" });
+	}
+};
+
 module.exports = {
 	registerDoctor,
 	verifyEmail,
 	verifyPhone,
 	loginDoctor,
 	logoutDoctor,
-	updateDoctorSettings, // Add the new controller function
+	updateDoctorSettings,
+	getAllModifiers, // Add the new controller function
 };

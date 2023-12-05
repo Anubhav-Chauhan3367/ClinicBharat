@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import MainQueue from "../queues/MainQueue";
-import DoctorTarget from "../doctor/DoctorTarget";
+import DoctorTarget from "./statistics/doctorstatistics/DoctorTarget";
 import WaitingQueue from "../queues/WaitingQueue";
 import TabButtons from "../common/TabButtons";
 

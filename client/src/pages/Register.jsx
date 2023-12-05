@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import DoctorRegistration from "../components/doctor/DoctorRegistration";
-import PatientRegistration from "../components/patient/PatientRegistration";
+import DoctorRegistration from "../components/auth/register/DoctorRegistration";
+import PatientRegistration from "../components/auth/register/PatientRegistration";
 
 function Register() {
 	const [activeTab, setActiveTab] = useState("doctor");

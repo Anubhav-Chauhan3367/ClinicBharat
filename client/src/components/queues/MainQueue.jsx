@@ -67,6 +67,7 @@ const MainQueue = () => {
 					return [...prevAppointments, newAppointment];
 				});
 			}
+			console.log(appointments);
 		});
 
 		socket.on(

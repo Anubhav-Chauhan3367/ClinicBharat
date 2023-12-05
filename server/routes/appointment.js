@@ -56,6 +56,15 @@ router.put(
 	appointmentsController.updateAppointmentStatus
 );
 
+// Update the queue of an appointment
+router.put(
+	"/update-queue/:appointmentId",
+	authMiddleware("Patient"),
+	[body("newQueueId").isMongoId().withMessage("Invalid new queue ID")],
+	validate,
+	appointmentsController.updateAppointmentQueue
+);
+
 // Cancel an appointment
 router.delete(
 	"/:appointmentId",

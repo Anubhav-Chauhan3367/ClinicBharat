@@ -8,8 +8,7 @@ const getDoctorAppointments = async (req, res) => {
 		// Assuming doctor ID is stored in req.user.id after authentication
 		const doctorId = req.user.id;
 		const appointments = await Appointment.getAppointmentsForDoctor(
-			doctorId,
-			"main" // Specify the queue type (main or waiting)
+			doctorId
 		);
 		res.json(appointments);
 	} catch (err) {
@@ -24,8 +23,7 @@ const getPatientAppointments = async (req, res) => {
 		// Assuming patient ID is stored in req.user.id after authentication
 		const patientId = req.user.id;
 		const appointments = await Appointment.getAppointmentsForPatient(
-			patientId,
-			"main" // Specify the queue type (main or waiting)
+			patientId
 		);
 		res.json(appointments);
 	} catch (err) {
@@ -40,10 +38,7 @@ const getDoctorWaitingQueueAppointments = async (req, res) => {
 		// Assuming doctor ID is stored in req.user.id after authentication
 		const doctorId = req.user.id;
 		const waitingQueueAppointments =
-			await Appointment.getAppointmentsForDoctor(
-				doctorId,
-				"waiting" // Specify the queue type (main or waiting)
-			);
+			await Appointment.getAppointmentsForDoctor(doctorId, "waiting");
 		res.json(waitingQueueAppointments);
 	} catch (err) {
 		console.error(err);
@@ -57,10 +52,7 @@ const getPatientWaitingQueueAppointments = async (req, res) => {
 		// Assuming patient ID is stored in req.user.id after authentication
 		const patientId = req.user.id;
 		const waitingQueueAppointments =
-			await Appointment.getAppointmentsForPatient(
-				patientId,
-				"waiting" // Specify the queue type (main or waiting)
-			);
+			await Appointment.getAppointmentsForPatient(patientId, "waiting");
 		res.json(waitingQueueAppointments);
 	} catch (err) {
 		console.error(err);
@@ -83,24 +75,6 @@ const createAppointment = async (req, res) => {
 		// Assuming patient ID is stored in req.user.id after authentication
 		const patientId = req.user.id;
 
-		// Get the doctor's preference for the number of patients to see
-		const doctorModel = await Doctor.findById(doctor);
-		const mainQueueLimit = doctorModel.mainQueueLimit;
-
-		let queueType = "main";
-
-		// Check if the main queue limit has been reached
-		const mainQueueAppointmentsCount = await Appointment.count({
-			doctor,
-			appointment_date: { $gte: new Date() },
-			queue: "main",
-			status: "scheduled", // Consider only scheduled appointments
-		});
-
-		if (mainQueueAppointmentsCount >= mainQueueLimit) {
-			queueType = "waiting";
-		}
-
 		// Use the model method to create a new appointment
 		const newAppointment = await Appointment.createAppointment({
 			patient: patientId,
@@ -109,16 +83,14 @@ const createAppointment = async (req, res) => {
 			appointment_date,
 			status,
 			notes,
-			queue: queueType,
 		});
 
-		// Populate the patient field to get the complete patient reference
-		await newAppointment.populate("patient").execPopulate();
+		await newAppointment.populate("patient");
+		await newAppointment.populate("doctor");
 
 		// Emit socket event for real-time update
 		io.of("/appointments").emit("newAppointment", {
 			appointment: newAppointment,
-			queueType: queueType,
 		});
 
 		res.status(201).json(newAppointment);
@@ -155,6 +127,43 @@ const updateAppointmentStatus = async (req, res) => {
 			queueType: appointment.queue,
 		});
 
+		// Check and transfer appointments if needed
+		await transferAppointmentsToMainQueue(updatedAppointment.doctor);
+
+		res.json(updatedAppointment);
+	} catch (err) {
+		console.error(err);
+		res.status(500).send("Internal Server Error");
+	}
+};
+
+// Update the queue ID of an appointment
+const updateAppointmentQueue = async (req, res) => {
+	try {
+		const { appointmentId } = req.params;
+		const { newQueueId } = req.body;
+
+		// Additional validation or checks can be added here
+
+		// Find the appointment by ID
+		const appointment = await Appointment.findById(appointmentId);
+
+		if (!appointment) {
+			return res.status(404).json({ message: "Appointment not found" });
+		}
+
+		// Use the instance method to update the queue ID
+		await appointment.updateQueue(newQueueId);
+
+		// Fetch the updated appointment to send in the response
+		const updatedAppointment = await Appointment.findById(appointmentId);
+
+		// Emit socket event for real-time update with queue type
+		io.of("/appointments").emit("appointmentUpdate", {
+			updatedAppointment: updatedAppointment,
+			queueType: updatedAppointment.queue,
+		});
+
 		res.json(updatedAppointment);
 	} catch (err) {
 		console.error(err);
@@ -182,10 +191,58 @@ const cancelAppointment = async (req, res) => {
 			queueType: appointment.queue,
 		});
 
+		// Check and transfer appointments if needed
+		await transferAppointmentsToMainQueue(cancelledAppointment.doctor);
+
 		res.json(cancelledAppointment);
 	} catch (err) {
 		console.error(err);
 		res.status(500).send("Internal Server Error");
+	}
+};
+
+// Transfer appointments from waiting queue to main queue if needed
+const transferAppointmentsToMainQueue = async (doctorId) => {
+	try {
+		const doctorModel = await Doctor.findById(doctorId);
+		const mainQueueLimit = doctorModel.mainQueueLimit;
+
+		const mainQueueAppointmentsCount = await Appointment.count({
+			doctor: doctorId,
+			appointment_date: { $gte: new Date() },
+			queue: "main",
+			status: "scheduled",
+		});
+
+		if (mainQueueAppointmentsCount < mainQueueLimit) {
+			// Get the waiting queue appointments
+			const waitingQueueAppointments = await Appointment.find({
+				doctor: doctorId,
+				appointment_date: { $gte: new Date() },
+				queue: "waiting",
+				status: "scheduled",
+			})
+				.sort({ created_at: 1 })
+				.limit(mainQueueLimit - mainQueueAppointmentsCount);
+
+			// Update the queue type to "main" for the transferred appointments
+			const updatePromises = waitingQueueAppointments.map(
+				async (appointment) => {
+					await Appointment.findByIdAndUpdate(appointment._id, {
+						queue: "main",
+					});
+					// Emit socket event for real-time update
+					io.of("/appointments").emit("appointmentUpdate", {
+						updatedAppointment: appointment,
+						queueType: "main",
+					});
+				}
+			);
+
+			await Promise.all(updatePromises);
+		}
+	} catch (err) {
+		console.error("Error transferring appointments to main queue:", err);
 	}
 };
 
@@ -196,5 +253,6 @@ module.exports = {
 	getPatientWaitingQueueAppointments,
 	createAppointment,
 	updateAppointmentStatus,
+	updateAppointmentQueue,
 	cancelAppointment,
 };
